@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Declaratie Generator CLI
 ========================
@@ -20,8 +20,8 @@ import qrcode
 from datetime import datetime
 from collections import defaultdict
 
-# ===== CONFIGURATIE =====
-BASE = r"/pad/naar/declaraties"  # pas aan naar jouw pad
+# ===== CONFIGURATIE (voorbeeld — zelf invullen) =====
+BASE = r"/pad/naar/declaraties"
 REKENINGHOUDER = "J. Doe"
 IBAN = "NL00 BANK 0000 0000 00"
 # =========================
@@ -78,7 +78,7 @@ def extract_transaction(pdf_path):
     merchant = amount = rentedatum = verwerkingsdatum = omschrijving = transactiereferentie = ""
 
     for i, line in enumerate(lines):
-        if line.startswith("- ") and "Ôé¼" in line:
+        if line.startswith("- ") and "€" in line:
             amount = line.replace("- ", "").strip()
             if i > 0:
                 merchant = lines[i - 1]
@@ -187,7 +187,7 @@ def short_cat_name(cat_name):
     return parts[1].capitalize() if len(parts) > 1 else cat_name.capitalize()
 
 def gen_qr_png(iban, holder, amount_eur, description):
-    # EPC QR code (ISO 20022) ÔÇö punt als decimaalscheiding (volgens standaard)
+    # EPC QR code (ISO 20022) — punt als decimaalscheiding (volgens standaard)
     bare_iban = iban.replace(" ", "")
     bedrag = f"EUR{amount_eur:.2f}"
     qr_data = "\r\n".join([
@@ -527,7 +527,7 @@ def generate_combined_pdf(all_categories, output_path, project, client, show_qr=
     page_num = 0
     grand_total = 0
 
-    # Tree pages first ÔÇö "Deze zip bevat:"
+    # Tree pages first — "Deze zip bevat:"
     if tree_text:
         for chunk in [tree_text[i:i+5000] for i in range(0, len(tree_text), 5000)]:
             page = doc.new_page()
@@ -742,7 +742,7 @@ def main():
         print("    --map <mappen>      Categorieen om uit te sluiten (nummers of namen, bijv. 1 4)")
         print("    --auto              Auto-classificatie o.b.v. transactiegegevens")
         print("    --inbox <pad>       Scan een aparte map met PDFs, classificeer auto")
-        print("    --move              Verplaats bestanden uit inbox (ipv kopi├½ren)")
+        print("    --move              Verplaats bestanden uit inbox (ipv kopiëren)")
         print("    --rekening          Toon bankrekeninggegevens")
         print("    --qr <bedrag>       Genereer QR code PNG voor een bedrag (bv. 112.55)")
         print("    --no-qr             Geen QR codes in PDFs")
@@ -1092,7 +1092,7 @@ def main():
     generate_combined_pdf(all_categories, combined_output, project, client, show_qr=not arg_no_qr, tree_text=tree_text)
     pdf_files.append(combined_output)
 
-    # Zip ÔÇö tree opnieuw opbouwen met combined PDF erbij
+    # Zip — tree opnieuw opbouwen met combined PDF erbij
     zip_tree_entries = tree_entries + [os.path.join("declaratie_pdfs", os.path.basename(combined_output))]
     zip_tree_text = build_zip_tree(zip_tree_entries)
     zip_path = os.path.join(BASE, f"{project}_declaraties_{timestamp}.zip")

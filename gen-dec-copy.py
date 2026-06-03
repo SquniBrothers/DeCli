@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Declaratie Generator CLI
 ========================
@@ -20,10 +20,13 @@ import qrcode
 from datetime import datetime
 from collections import defaultdict
 
-# ===== CONFIGURATIE =====
-BASE = r"/pad/naar/declaraties"  # pas aan naar jouw pad
+# ===== CONFIGURATIE (voorbeeld — zelf invullen) =====
+BASE = r"/pad/naar/declaraties"
 REKENINGHOUDER = "J. Doe"
 IBAN = "NL00 BANK 0000 0000 00"
+REPO_URL = "https://github.com/G2LB/DeCli/"
+NERD_FONT_PATH = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Microsoft", "Windows", "Fonts", "JetBrainsMonoNerdFont-Regular.ttf")
+NERD_GLYPH_GITHUB = "\uea84"  # nf-dev-github_badge
 # =========================
 
 CATEGORIE_MAPPEN = {
@@ -78,7 +81,7 @@ def extract_transaction(pdf_path):
     merchant = amount = rentedatum = verwerkingsdatum = omschrijving = transactiereferentie = ""
 
     for i, line in enumerate(lines):
-        if line.startswith("- ") and "Ôé¼" in line:
+        if line.startswith("- ") and "€" in line:
             amount = line.replace("- ", "").strip()
             if i > 0:
                 merchant = lines[i - 1]
@@ -529,7 +532,7 @@ def generate_category_pdf(category_name, transactions, output_path, project, cli
     os.replace(p, output_path)
     print(f"  [PDF] {output_path}")
 
-def draw_frontpage_matrix(page, project, client, all_categories, grand_total, script_name):
+def draw_frontpage_matrix(page, project, client, all_categories, grand_total, script_name, cli_command="", show_cmd=True):
     dh(page, project, "Voorpagina")
     y = M + 65
     page.insert_text((M + 15, y), "Declaratie Overzicht", fontsize=18, color=CA, fontname="Helvetica-Bold")
@@ -542,8 +545,29 @@ def draw_frontpage_matrix(page, project, client, all_categories, grand_total, sc
     y += 18
     page.insert_text((M + 15, y), f"Declarant: {REKENINGHOUDER}", fontsize=11, color=CD, fontname="Helvetica-Bold")
     y += 18
-    page.insert_text((M + 15, y), f"Gegenereerd: {datetime.now().strftime('%d-%m-%Y %H:%M')} door {script_name}", fontsize=9, color=(0.5, 0.5, 0.5), fontname="Helvetica")
-    y += 30
+    base_x = M + 15
+    gegenereerd = f"Gegenereerd: {datetime.now().strftime('%d-%m-%Y %H:%M')} met "
+    gw = fitz.get_text_length(gegenereerd, fontname="Helvetica", fontsize=9)
+    page.insert_text((base_x, y), gegenereerd, fontsize=9, color=(0.5, 0.5, 0.5), fontname="Helvetica")
+    nf_avail = os.path.exists(NERD_FONT_PATH)
+    icon_w = 0
+    if nf_avail:
+        page.insert_text((base_x + gw, y), NERD_GLYPH_GITHUB, fontsize=9, fontfile=NERD_FONT_PATH)
+        icon_w = 10
+    link_label = "DeCli"
+    lx = base_x + gw + icon_w
+    lw = fitz.get_text_length(link_label, fontname="Helvetica", fontsize=9, fontfile=NERD_FONT_PATH if nf_avail else None)
+    page.insert_text((lx, y), link_label, fontsize=9, color=CA, fontname="Helvetica")
+    page.insert_link({
+        "kind": fitz.LINK_URI,
+        "from": fitz.Rect(lx, y - 10, lx + lw, y + 4),
+        "uri": REPO_URL,
+    })
+    y += 20
+    if show_cmd and cli_command:
+        page.insert_text((M + 15, y), cli_command, fontsize=8, color=(0.5, 0.5, 0.5), fontname="Courier")
+        y += 16
+    y += 10
     page.draw_line((M + 15, y), (W - M - 15, y), color=CA)
     y += 10
     page.insert_text((M + 15, y), "Overzicht declaraties per categorie:", fontsize=10, color=CA, fontname="Helvetica-Bold")
@@ -580,7 +604,7 @@ def draw_frontpage_matrix(page, project, client, all_categories, grand_total, sc
     page.draw_line((M + 15, y), (W - M - 15, y), color=CA)
     return row_info, y
 
-def generate_combined_pdf(all_categories, output_path, project, client, show_qr=True, tree_text="", script_name=""):
+def generate_combined_pdf(all_categories, output_path, project, client, show_qr=True, tree_text="", script_name="", cli_command="", show_cmd=True):
     doc = fitz.open()
     grand_total = sum(parse_amount(t["amount"]) for _, txs in all_categories for t in txs)
 
@@ -588,7 +612,7 @@ def generate_combined_pdf(all_categories, output_path, project, client, show_qr=
 
     # 1. Frontpage (matrix + bronbestanden tree)
     page = doc.new_page()
-    row_info, y_after = draw_frontpage_matrix(page, project, client, all_categories, grand_total, script_name)
+    row_info, y_after = draw_frontpage_matrix(page, project, client, all_categories, grand_total, script_name, cli_command, show_cmd)
 
     if tree_text:
         y = y_after + 15
@@ -682,7 +706,27 @@ def generate_combined_pdf(all_categories, output_path, project, client, show_qr=
     y += 25
     page.insert_text((M + 20, y), f"Opdrachtgever: {client}", fontsize=10, color=CD, fontname="Helvetica-Bold")
     y += 16
-    page.insert_text((M + 20, y), f"Gegenereerd: {datetime.now().strftime('%d-%m-%Y %H:%M')}", fontsize=9, color=(0.5, 0.5, 0.5), fontname="Helvetica")
+    base_x = M + 20
+    gegenereerd = f"Gegenereerd: {datetime.now().strftime('%d-%m-%Y %H:%M')} met "
+    gw_t = fitz.get_text_length(gegenereerd, fontname="Helvetica", fontsize=9)
+    page.insert_text((base_x, y), gegenereerd, fontsize=9, color=(0.5, 0.5, 0.5), fontname="Helvetica")
+    nf_avail = os.path.exists(NERD_FONT_PATH)
+    icon_w = 0
+    if nf_avail:
+        page.insert_text((base_x + gw_t, y), NERD_GLYPH_GITHUB, fontsize=9, fontfile=NERD_FONT_PATH)
+        icon_w = 10
+    link_label = "DeCli"
+    lx = base_x + gw_t + icon_w
+    lw = fitz.get_text_length(link_label, fontname="Helvetica", fontsize=9)
+    page.insert_text((lx, y), link_label, fontsize=9, color=CA, fontname="Helvetica")
+    page.insert_link({
+        "kind": fitz.LINK_URI,
+        "from": fitz.Rect(lx, y - 10, lx + lw, y + 4),
+        "uri": REPO_URL,
+    })
+    y += 18
+    if show_cmd and cli_command:
+        page.insert_text((M + 20, y), cli_command, fontsize=8, color=(0.5, 0.5, 0.5), fontname="Courier")
     df(page, len(doc))
 
     # ===== PASS 2: Add page numbers -X- underlined + links =====
@@ -723,7 +767,7 @@ def generate_combined_pdf(all_categories, output_path, project, client, show_qr=
 
 SEP = 88
 
-def generate_txt_table(all_categories, project, client):
+def generate_txt_table(all_categories, project, client, cli_command=""):
     lines = []
     lines.append("Declaratie Overzicht - " + project)
     lines.append("=" * SEP)
@@ -758,6 +802,9 @@ def generate_txt_table(all_categories, project, client):
     lines.append(f"Project: {project}")
     lines.append(f"Opdrachtgever: {client}")
     lines.append(f"Gegenereerd: {datetime.now().strftime('%d-%m-%Y %H:%M')}")
+    lines.append(f"Repository: {REPO_URL}")
+    if cli_command:
+        lines.append(f"Commando: {cli_command}")
     lines.append("")
     return "\n".join(lines)
 
@@ -817,6 +864,9 @@ def build_zip_tree(entries):
 def main():
     import sys
 
+    cli_command = " ".join(sys.argv)
+    arg_no_cmd = "--no-cmd" in sys.argv
+
     # --help / -h moet direct werken, zonder enige andere output
     if "--help" in sys.argv or "-h" in sys.argv:
         print("  Gebruik: py genereer_declaraties.py [opties]")
@@ -828,11 +878,12 @@ def main():
         print("    --map <mappen>      Categorieen om uit te sluiten (nummers of namen, bijv. 1 4)")
         print("    --auto              Auto-classificatie o.b.v. transactiegegevens")
         print("    --inbox <pad>       Scan een aparte map met PDFs, classificeer auto")
-        print("    --move              Verplaats bestanden uit inbox (ipv kopi├½ren)")
+        print("    --move              Verplaats bestanden uit inbox (ipv kopiëren)")
         print("    --rekening          Toon bankrekeninggegevens")
         print("    --qr <bedrag>       Genereer QR code PNG voor een bedrag (bv. 112.55)")
         print("    --no-qr             Geen QR codes in PDFs")
         print("    --pdf-to-front      Kopieer gecombineerde PDF naar werkmap")
+        print("    --no-cmd            Verberg CLI-commando in PDF")
         print("    --reset             Wis verwerkingstracking")
         print("    --help, -h          Dit overzicht")
         print()
@@ -865,10 +916,14 @@ def main():
     arg_qr = False
     arg_no_qr = False
     arg_pdf_to_front = False
+    arg_no_cmd = False
 
     i = 0
     while i < len(args):
-        if args[i] == "--project" and i + 1 < len(args):
+        if args[i] == "--no-cmd":
+            arg_no_cmd = True
+            i += 1
+        elif args[i] == "--project" and i + 1 < len(args):
             arg_project = args[i + 1]
             i += 2
         elif args[i] == "--client" and i + 1 < len(args):
@@ -1158,7 +1213,7 @@ def main():
 
     # Tabel
     print("\n=== ASCII TABLE (voor e-mail) ===")
-    table = generate_txt_table(all_categories, project, client)
+    table = generate_txt_table(all_categories, project, client, cli_command if not arg_no_cmd else "")
     print(table)
 
     table_path = os.path.join(OUT_DIR, f"Declaratie_table_{project}_{timestamp}.txt")
@@ -1180,10 +1235,10 @@ def main():
 
     # Gecombineerde PDF
     combined_output = os.path.join(OUT_DIR, f"Declaratie_gecombineerd_{project}_{timestamp}.pdf")
-    generate_combined_pdf(all_categories, combined_output, project, client, show_qr=not arg_no_qr, tree_text=tree_text, script_name=os.path.basename(__file__))
+    generate_combined_pdf(all_categories, combined_output, project, client, show_qr=not arg_no_qr, tree_text=tree_text, script_name=os.path.basename(__file__), cli_command=cli_command, show_cmd=not arg_no_cmd)
     pdf_files.append(combined_output)
 
-    # Zip ÔÇö tree opnieuw opbouwen met combined PDF erbij
+    # Zip — tree opnieuw opbouwen met combined PDF erbij
     zip_tree_entries = tree_entries + [os.path.join("declaratie_pdfs", os.path.basename(combined_output))]
     zip_tree_text = build_zip_tree(zip_tree_entries)
     zip_path = os.path.join(BASE, f"{project}_declaraties_{timestamp}.zip")
