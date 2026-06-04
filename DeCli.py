@@ -1178,6 +1178,8 @@ def main():
     # Verwerking
     os.makedirs(OUT_DIR, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    proj = project.replace(" ", "_")
+    yyyymmdd = datetime.now().strftime("%y%m%d")
     all_categories = []
     pdf_files = []
     txt_files = []
@@ -1215,7 +1217,7 @@ def main():
                 continue
             txs = per_cat[cat_name]
             print(f"=== {cat_name} ({len(txs)} transacties) ===")
-            output = os.path.join(OUT_DIR, f"Declaratie_{cat_name}_{project}_{timestamp}.pdf")
+            output = os.path.join(OUT_DIR, f"declaratie_{cat_name}_{proj}_{timestamp}.pdf")
             generate_category_pdf(cat_name, txs, output, project, client, show_qr=not arg_no_qr, sort_week=arg_sort_week)
             pdf_files.append(output)
             all_categories.append((cat_name, txs))
@@ -1242,7 +1244,7 @@ def main():
                 tag = "BANK" if t["is_bank"] else "CONTANT"
                 print(f"    [{tag}] {t['merchant'][:35]:35s} {t['amount']:>8s}")
 
-            output = os.path.join(OUT_DIR, f"Declaratie_{cat_name}_{project}_{timestamp}.pdf")
+            output = os.path.join(OUT_DIR, f"declaratie_{cat_name}_{proj}_{timestamp}.pdf")
             generate_category_pdf(cat_name, txs, output, project, client, show_qr=not arg_no_qr, sort_week=arg_sort_week)
             pdf_files.append(output)
             all_categories.append((cat_name, txs))
@@ -1275,7 +1277,7 @@ def main():
     table = generate_txt_table(all_categories, project, client, cli_command if not arg_no_cmd else "")
     print(table)
 
-    table_path = os.path.join(OUT_DIR, f"Declaratie_table_{project}_{timestamp}.txt")
+    table_path = os.path.join(OUT_DIR, f"declaratie_table_{proj}_{timestamp}.txt")
     with open(table_path, "w", encoding="utf-8") as f:
         f.write(table)
     print(f"\n  [TABLE] {table_path}")
@@ -1289,18 +1291,18 @@ def main():
     for txt in txt_files:
         rel = os.path.relpath(txt, BASE)
         tree_entries.append(os.path.join("bronbestanden", rel))
-    tree_entries.append(f"declaratie_table_{project}.txt")
+    tree_entries.append(f"declaratie_table_{proj}.txt")
     tree_text = build_zip_tree(tree_entries)
 
     # Gecombineerde PDF
-    combined_output = os.path.join(OUT_DIR, f"Declaratie_gecombineerd_{project}_{timestamp}.pdf")
+    combined_output = os.path.join(OUT_DIR, f"declaraties_{proj}_{timestamp}.pdf")
     generate_combined_pdf(all_categories, combined_output, project, client, show_qr=not arg_no_qr, tree_text=tree_text, script_name=os.path.basename(__file__), cli_command=cli_command, show_cmd=not arg_no_cmd, sort_week=arg_sort_week)
     pdf_files.append(combined_output)
 
-    # Zip — tree opnieuw opbouwen met combined PDF erbij
+    # Zip - tree opnieuw opbouwen met combined PDF erbij
     zip_tree_entries = tree_entries + [os.path.join("declaratie_pdfs", os.path.basename(combined_output))]
     zip_tree_text = build_zip_tree(zip_tree_entries)
-    zip_path = os.path.join(BASE, f"{project}_declaraties_{timestamp}.zip")
+    zip_path = os.path.join(BASE, f"{yyyymmdd}-declaraties_{proj}.zip")
     create_project_zip(pdf_files, txt_files, bron_pdfs, table, zip_path, project, zip_tree_text)
 
     # --pdf-to-front: kopieer gecombineerde PDF naar werkmap
