@@ -20,7 +20,8 @@ cp config.example.yaml config.yaml
 
 # Draaien
 uv run DeCli.py --project "Project X" --client "Opdrachtgever" --auto
-uv run DeCli.py --project "Project X" --client "Opdrachtgever" --auto --map 4
+uv run DeCli.py --project "Project X" --client "Opdrachtgever" --auto --xcat 4
+uv run DeCli.py --project "Project X" --client "Opdrachtgever" --auto --sort-week
 uv run DeCli.py --project "Project X" --client "Opdrachtgever" --auto --pdf-to-front
 ```
 
@@ -49,20 +50,20 @@ categorie_mappen:
 
 ```
 declaraties/
-Ôö£ÔöÇÔöÇ .gitignore
-Ôö£ÔöÇÔöÇ pyproject.toml
-Ôö£ÔöÇÔöÇ DeCli.py
-Ôö£ÔöÇÔöÇ config.yaml          # persoonlijk ÔÇö niet in git
-Ôö£ÔöÇÔöÇ config.example.yaml
-Ôö£ÔöÇÔöÇ README.md
-Ôö£ÔöÇÔöÇ LICENSE
-Ôö£ÔöÇÔöÇ TODO.md
-Ôö£ÔöÇÔöÇ eten/                # w20/ w21/ ... of losse PDF's
-Ôö£ÔöÇÔöÇ reizen/
-Ôö£ÔöÇÔöÇ accomodaties/
-Ôö£ÔöÇÔöÇ overig/
-Ôö£ÔöÇÔöÇ bonnetjes/           # Syncthing target ÔÇö niet in git
-ÔööÔöÇÔöÇ declaratie_overzichten/   # output ÔÇö niet in git
+|-- .gitignore
+|-- pyproject.toml
+|-- DeCli.py
+|-- config.yaml          # persoonlijk -- niet in git
+|-- config.example.yaml
+|-- README.md
+|-- LICENSE
+|-- TODO.md
+|-- eten/                # w20/ w21/ ... of losse PDF's
+|-- reizen/
+|-- accomodaties/
+|-- overig/
+|-- bonnetjes/           # Syncthing target -- niet in git
+\-- declaratie_overzichten/   # output -- niet in git
 ```
 
 ## Features
@@ -76,7 +77,10 @@ declaraties/
 - ZIP-archief met alle bronbestanden + PDF's
 - `--pdf-to-front`: kopieer gecombineerde PDF naar de werkmap
 - `--config <pad>`: eigen configuratiebestand
+- `--no-cmd`: verberg CLI-commando in PDF
+- `--sort-week`: groepeer transacties per week met week-headers
+- `--xcat <nummers>`: sluit categorieen uit (bijv. --xcat 4)
 
 ## Licentie
 
-MIT ÔÇö zie `LICENSE`
+MIT -- zie `LICENSE`
