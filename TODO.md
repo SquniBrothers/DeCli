@@ -22,16 +22,6 @@ BIC_LOOKUP = {
 
 ---
 
-### 2. `--sort-week` flag
-**Branch:** `2-sort-week`  
-Transacties standaard gesorteerd op datum. Met deze flag:
-
-- Groepeer per week (ISO weeknummer)
-- Sorteer binnen de week op datum
-- Week-scheidingslijn in de PDF
-
----
-
 ### 4. `nb.txt` met `[Headers]` per categorie
 **Branch:** `4-nb-headers`  
 
@@ -87,6 +77,18 @@ Optioneel: genereer een extra overzicht met BTW-bedragen per categorie/maand. Ha
 ---
 
 ## Done
+
+### 2. `--sort-week` flag + bestandsnaam conventies
+**Branch:** `2-sort-week` → gemerged naar `main`
+
+- `--sort-week` flag: groepeer transacties per week in PDF met week-header balk (`dwh`) en week-subtotaal (`dwt`)
+- `--xcat <nummers>` flag (exclude category, vervangt `--map`)
+- Bestandsnaam conventie aangepast:
+  - `declaratie_{cat}_{proj}_{ts}.pdf` (per-category)
+  - `declaraties_{proj}_{ts}.pdf` (combined)
+  - `declaratie_table_{proj}_{ts}.txt` (ASCII tabel)
+  - `{yymmdd}-declaraties_{proj}.zip` (ZIP)
+  - spaties in projectnaam vervangen door `_`
 
 ### 3. Repo URL + CLI command in PDF
 **Branch:** `3-repo-url` → gemerged naar `main`
