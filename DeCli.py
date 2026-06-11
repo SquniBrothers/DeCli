@@ -1032,12 +1032,13 @@ def create_project_zip(pdf_files, txt_files, bron_pdfs, table_text, output_zip, 
             zf.write(pdf, arc)
             add_entry(arc)
         for cat_name, pdf_path in bron_pdfs:
-            arc = os.path.join("bronbestanden", "bankafschriften", cat_name, os.path.basename(pdf_path))
+            arc = os.path.join("src", cat_name, os.path.basename(pdf_path))
             zf.write(pdf_path, arc)
             add_entry(arc)
         for txt in txt_files:
             rel = os.path.relpath(txt, BASE)
-            arc = os.path.join("bronbestanden", rel)
+            parts = rel.split(os.sep)
+            arc = os.path.join("src", *parts)
             zf.write(txt, arc)
             add_entry(arc)
         table_arc = f"declaratie_table_{project}.txt"
@@ -1493,10 +1494,10 @@ def main():
     for pdf in pdf_files:
         tree_entries.append(os.path.join("declaratie_pdfs", os.path.basename(pdf)))
     for cat_name, pdf_path in bron_pdfs:
-        tree_entries.append(os.path.join("bronbestanden", "bankafschriften", cat_name, os.path.basename(pdf_path)))
+        tree_entries.append(os.path.join("src", cat_name, os.path.basename(pdf_path)))
     for txt in txt_files:
         rel = os.path.relpath(txt, BASE)
-        tree_entries.append(os.path.join("bronbestanden", rel))
+        tree_entries.append(os.path.join("src", rel))
     tree_entries.append(f"declaratie_table_{proj}.txt")
     tree_text = build_zip_tree(tree_entries)
 
@@ -1508,7 +1509,9 @@ def main():
     # Zip - tree opnieuw opbouwen met combined PDF erbij
     zip_tree_entries = tree_entries + [os.path.join("declaratie_pdfs", os.path.basename(combined_output))]
     zip_tree_text = build_zip_tree(zip_tree_entries)
-    zip_path = os.path.join(BASE, f"{yyyymmdd}-declaraties_{proj}.zip")
+    EXPORT_DIR = os.path.join(BASE, "export")
+    os.makedirs(EXPORT_DIR, exist_ok=True)
+    zip_path = os.path.join(EXPORT_DIR, f"{yyyymmdd}-declaraties_{proj}.zip")
     create_project_zip(pdf_files, txt_files, bron_pdfs, table, zip_path, project, zip_tree_text)
 
     # --pdf-to-front: kopieer gecombineerde PDF naar werkmap
