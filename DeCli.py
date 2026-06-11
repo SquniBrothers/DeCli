@@ -23,6 +23,7 @@ from collections import defaultdict
 
 # ===== CONFIGURATIE (wordt geladen in main()) =====
 BASE = ""
+SRC = ""
 REKENINGHOUDER = ""
 IBAN = ""
 CATEGORIE_MAPPEN = {}
@@ -85,7 +86,7 @@ def resolve_tinos_fonts():
     return None
 
 def load_config(path):
-    global BASE, REKENINGHOUDER, IBAN, CATEGORIE_MAPPEN, STATE_FILE, OUT_DIR
+    global BASE, SRC, REKENINGHOUDER, IBAN, CATEGORIE_MAPPEN, STATE_FILE, OUT_DIR
     for enc in ("utf-8-sig", "utf-16"):
         try:
             with open(path, "r", encoding=enc) as f:
@@ -96,6 +97,7 @@ def load_config(path):
     else:
         raise UnicodeDecodeError(f"Kan {path} niet lezen (geen UTF-8 of UTF-16)")
     BASE = cfg["base"]
+    SRC = cfg.get("src", BASE)
     REKENINGHOUDER = cfg["rekeninghouder"]
     IBAN = cfg["iban"]
     CATEGORIE_MAPPEN = {k: os.path.join(BASE, v) for k, v in cfg["categorie_mappen"].items()}
@@ -311,12 +313,12 @@ def classificeer_transactie(t):
     return None  # onbekend
 
 def organize_base():
-    """Scan BASE root voor losse bestanden, classificeer en verplaats naar categorie-mappen."""
-    if not os.path.isdir(BASE):
+    """Scan SRC root voor losse bestanden, classificeer en verplaats naar categorie-mappen in BASE."""
+    if not os.path.isdir(SRC):
         return
     moved = 0
-    for f in sorted(os.listdir(BASE)):
-        path = os.path.join(BASE, f)
+    for f in sorted(os.listdir(SRC)):
+        path = os.path.join(SRC, f)
         if os.path.isdir(path):
             continue
         if not (f.endswith(".pdf") and "Details-afschrijving" in f or
