@@ -310,6 +310,56 @@ def classificeer_transactie(t):
                 return cat
     return None  # onbekend
 
+def organize_base():
+    """Scan BASE root voor losse bestanden, classificeer en verplaats naar categorie-mappen."""
+    if not os.path.isdir(BASE):
+        return
+    moved = 0
+    for f in sorted(os.listdir(BASE)):
+        path = os.path.join(BASE, f)
+        if os.path.isdir(path):
+            continue
+        if not (f.endswith(".pdf") and "Details-afschrijving" in f or
+                f.endswith(".txt") and f != "README.txt"):
+            continue
+
+        cat = None
+        if f.endswith(".pdf"):
+            t = extract_transaction(path)
+            if not t or not t["merchant"]:
+                print(f"  [!] Kan transactie niet lezen: {f}")
+                continue
+            cat = classificeer_transactie(t)
+        elif f.endswith(".txt"):
+            txs = parse_text_transactions(path)
+            if not txs:
+                print(f"  [!] Kan transacties niet lezen: {f}")
+                continue
+            cat = classificeer_transactie(txs[0])
+
+        # Map classificeer-resultaat naar CATEGORIE_MAPPEN keys
+        if cat and cat not in CATEGORIE_MAPPEN:
+            prefix = cat.split("-", 1)[0]
+            cat = next((k for k in CATEGORIE_MAPPEN if k.startswith(prefix + "-")), None)
+        if not cat:
+            cat = next((k for k in CATEGORIE_MAPPEN if k.startswith("4-")), None)
+
+        target_dir = CATEGORIE_MAPPEN.get(cat)
+        if not target_dir:
+            print(f"  [!] Geen doelmap voor '{f}' — overslaan")
+            continue
+
+        os.makedirs(target_dir, exist_ok=True)
+        dst = os.path.join(target_dir, f)
+        if not os.path.exists(dst):
+            shutil.move(path, dst)
+            print(f"  [MOVE] {f} -> {os.path.basename(target_dir)}/")
+            moved += 1
+        else:
+            print(f"  [OK]   {f} staat al in {os.path.basename(target_dir)}/")
+    if moved:
+        print()
+
 def toon_classificatie(transacties):
     """Toon per transactie de voorgestelde categorie."""
     rows = []
@@ -1339,6 +1389,7 @@ def main():
     new_refs = set()
 
     if arg_auto:
+        organize_base()
         # Auto-classificatie: scan ALLE mappen, classificeer per transactie
         alle_txs = []
         for cat_name, cat_path in CATEGORIE_MAPPEN.items():
