@@ -16,6 +16,7 @@ import zipfile
 import tempfile
 import json
 import io
+import hashlib
 import qrcode
 import yaml
 from datetime import datetime
@@ -272,6 +273,13 @@ def short_cat_name(cat_name):
     parts = cat_name.split("-", 1)
     return parts[1].capitalize() if len(parts) > 1 else cat_name.capitalize()
 
+def bestands_hash(pad):
+    h = hashlib.md5()
+    with open(pad, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
 def gen_qr_png(iban, holder, amount_eur, description, bic=None):
     bare_iban = re.sub(r"\s+", "", iban).upper()
     holder = (holder or "").strip()[:70]
@@ -399,17 +407,9 @@ def toon_classificatie(transacties):
 
 def scan_bron_duplicaten():
     """Scan alle bronmappen op dubbele bestanden voor verwerking."""
-    import hashlib
     warns = []
     hash_gezien = {}
     refs_gezien = {}
-
-    def bestands_hash(pad):
-        h = hashlib.md5()
-        with open(pad, "rb") as f:
-            for chunk in iter(lambda: f.read(65536), b""):
-                h.update(chunk)
-        return h.hexdigest()
 
     for cat_name, cat_path in CATEGORIE_MAPPEN.items():
         if not os.path.isdir(cat_path):
@@ -1135,6 +1135,7 @@ def main():
     arg_xcat_raw = None
     arg_auto = False
     arg_inbox = None
+    arg_src_raw = None
     arg_move = False
     arg_reset = False
     arg_rekening = False
@@ -1179,6 +1180,9 @@ def main():
         elif args[i] == "--inbox" and i + 1 < len(args):
             arg_inbox = args[i + 1]
             i += 2
+        elif args[i] == "--src" and i + 1 < len(args):
+            arg_src_raw = args[i + 1]
+            i += 2
         elif args[i] == "--move":
             arg_move = True
             i += 1
@@ -1213,7 +1217,15 @@ def main():
         else:
             i += 1
 
+    arg_config = os.path.expanduser(arg_config)
     load_config(arg_config)
+
+    # Tilde expansion voor path argumenten
+    if arg_inbox:
+        arg_inbox = os.path.expanduser(arg_inbox)
+    if arg_src_raw:
+        arg_src_raw = os.path.expanduser(arg_src_raw)
+        SRC = arg_src_raw  # overschrijf config-waarde
 
     tinos_paths = resolve_tinos_fonts()
     if arg_classic:
@@ -1251,6 +1263,7 @@ def main():
         print("    --xcat <spec>       Categorieen om uit te sluiten (nummers, bijv. 1,4 of 1-3)")
         print("    --auto              Auto-classificatie o.b.v. transactiegegevens")
         print("    --inbox <pad>       Scan een aparte map met PDFs, classificeer auto")
+        print("    --src <pad>         Overschrijf src-pad uit config (t.b.v. --inbox / --auto)")
         print("    --move              Verplaats bestanden uit inbox (ipv kopiëren)")
         print("    --rekening          Toon bankrekeninggegevens")
         print("    --qr <bedrag>       Genereer QR code PNG voor een bedrag (bv. 112.55)")
@@ -1382,10 +1395,25 @@ def main():
             return
 
         print(f"  === INBOX SCAN: {inbox_path} ===")
+
+        # Bouw hash-set van bestaande PDFs in categorie-mappen
+        bekende_hashes = set()
+        for cat_path in CATEGORIE_MAPPEN.values():
+            if not os.path.isdir(cat_path):
+                continue
+            for root, dirs, files in os.walk(cat_path):
+                for f in files:
+                    if f.endswith(".pdf") and "Details-afschrijving" in f:
+                        bekende_hashes.add(bestands_hash(os.path.join(root, f)))
+
         inbox_txs = []
         for f in sorted(os.listdir(inbox_path)):
             if f.endswith(".pdf") and "Details-afschrijving" in f:
                 path = os.path.join(inbox_path, f)
+                fhash = bestands_hash(path)
+                if fhash in bekende_hashes:
+                    print(f"  [DUP] {f} — staat al in categorie-mappen (overslaan)")
+                    continue
                 t = extract_transaction(path)
                 if t["merchant"]:
                     t["categorie"] = classificeer_transactie(t) or "4-PBMs-overig"
