@@ -1372,6 +1372,16 @@ def main():
                     t["categorie"] = classificeer_transactie(t) or "4-PBMs-overig"
                     inbox_txs.append(t)
 
+        if month_filter is not None:
+            before = len(inbox_txs)
+            inbox_txs = filter_by_month(inbox_txs, month_filter)
+            after = len(inbox_txs)
+            if after < before:
+                print(f"  ({before - after} transacties buiten maand {month_filter} overgeslagen)")
+            elif after == 0:
+                print("  Geen transacties in geselecteerde maand.\n")
+                return
+
         if not inbox_txs:
             print("  Geen transacties gevonden in inbox.\n")
         else:
