@@ -82,7 +82,11 @@ declaraties/
 - Parse handmatige uitgaven uit `nb.txt`
 - Auto-classificatie o.b.v. handelsnaam (`--auto`)
 - Inbox scan: `--inbox <pad>` classificeert en kopieert/verplaatst naar juiste map
+- `--src <pad>`: overschrijft `src`-pad uit config (werkt met `--inbox` en `--auto`)
 - `--move`: verplaats i.p.v. kopiëren bij inbox scan
+- **Hash-based duplicate detectie**: tijdens `--inbox` worden alle PDF's in de categorie-mappen
+  gehasht (MD5). Nieuwe PDF's in de inbox worden vergeleken — bij een match wordt de PDF
+  overgeslagen (`[DUP]`). Zo voorkom je dubbele verwerking, ook als de bestandsnaam verschilt.
 
 ### Filteren & selecteren
 - `--cat <spec>`: alleen geselecteerde categorieën (bijv. `1,3` of `1-3`)
@@ -111,7 +115,6 @@ declaraties/
 - `--qr <bedrag>`: genereer losse QR-code PNG
 - `--config <pad>`: eigen configuratiebestand
 - `--reset`: wis verwerkingstracking
-- `--classic` / `--modern`: PDF-stijlkeuze
 - BIC lookup via IBAN — configureerbaar in `bic_lookup` in config.yaml
 
 ## Alle CLI opties
@@ -125,6 +128,7 @@ declaraties/
   --xcat <spec>       Categorieen om uit te sluiten (nummers, bijv. 1,4 of 1-3)
   --auto              Auto-classificatie o.b.v. transactiegegevens
   --inbox <pad>       Scan een aparte map met PDFs, classificeer auto
+  --src <pad>         Overschrijf src-pad uit config (t.b.v. --inbox / --auto)
   --move              Verplaats bestanden uit inbox (ipv kopiëren)
   --rekening          Toon bankrekeninggegevens
   --qr <bedrag>       Genereer QR code PNG voor een bedrag (bv. 112.55)
