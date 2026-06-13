@@ -115,6 +115,7 @@ declaraties/
 - `--qr <bedrag>`: genereer losse QR-code PNG
 - `--config <pad>`: eigen configuratiebestand
 - `--reset`: wis verwerkingstracking
+- `--force-dec`: forceer genereren (testmodus, slaat state-check over, werkt state niet bij)
 - BIC lookup via IBAN — configureerbaar in `bic_lookup` in config.yaml
 
 ## Alle CLI opties
@@ -140,6 +141,7 @@ declaraties/
   --classic           Klassieke stijl (Tinos/Times-Roman serif)
   --modern            Moderne stijl (Helvetica, standaard)
   --reset             Wis verwerkingstracking
+  --force-dec         Forceer genereren (testmodus, geen state update)
   --help, -h          Dit overzicht
 ```
 

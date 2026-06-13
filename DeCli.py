@@ -1133,6 +1133,7 @@ def main():
     arg_weken = None
     arg_cat_raw = None
     arg_xcat_raw = None
+    arg_force_dec = False
     arg_auto = False
     arg_inbox = None
     arg_src_raw = None
@@ -1214,6 +1215,9 @@ def main():
         elif args[i] == "--reset":
             arg_reset = True
             i += 1
+        elif args[i] == "--force-dec":
+            arg_force_dec = True
+            i += 1
         else:
             i += 1
 
@@ -1275,6 +1279,7 @@ def main():
         print("    --classic           Klassieke stijl (Tinos/Times-Roman serif)")
         print("    --modern            Moderne stijl (Helvetica, standaard)")
         print("    --reset             Wis verwerkingstracking")
+        print("    --force-dec         Forceer genereren (testmodus, geen state update)")
         print("    --help, -h          Dit overzicht")
         print()
         print("  Categorieen:")
@@ -1341,16 +1346,19 @@ def main():
         print()
 
     # Onverwerkte transacties checken
-    onverwerkt = check_onverwerkt()
-    if onverwerkt:
-        print(f"  Niet-verwerkte declaraties: {len(onverwerkt)}")
-        for cat, t in onverwerkt[:5]:
-            tag = "BANK" if t["is_bank"] else "CONTANT"
-            print(f"    [{tag}] [{cat}] {t['merchant'][:40]:40s} {t['amount']}")
-        if len(onverwerkt) > 5:
-            print(f"    ... en {len(onverwerkt) - 5} meer")
+    if arg_force_dec:
+        print("  [!] FORCED modus — state wordt niet gelezen of bijgewerkt.\n")
     else:
-        print("  Alle transacties zijn al verwerkt.")
+        onverwerkt = check_onverwerkt()
+        if onverwerkt:
+            print(f"  Niet-verwerkte declaraties: {len(onverwerkt)}")
+            for cat, t in onverwerkt[:5]:
+                tag = "BANK" if t["is_bank"] else "CONTANT"
+                print(f"    [{tag}] [{cat}] {t['merchant'][:40]:40s} {t['amount']}")
+            if len(onverwerkt) > 5:
+                print(f"    ... en {len(onverwerkt) - 5} meer")
+        else:
+            print("  Alle transacties zijn al verwerkt.")
 
     week_filter = arg_weken
     if week_filter is None and not arg_inbox:
@@ -1517,6 +1525,20 @@ def main():
                 if ref:
                     new_refs.add(ref)
 
+        # Forced fallback: als cat/xcat filter alles uitsloot, neem alle categorieën
+        if not all_categories and arg_force_dec and per_cat:
+            print("  [FORCED] Geen categorieën geselecteerd — verwerk alle beschikbare:")
+            for cat_name, txs in sorted(per_cat.items()):
+                print(f"  + {cat_name} ({len(txs)} transacties)")
+                output = os.path.join(OUT_DIR, f"declaratie_{cat_name}_{proj}_{timestamp}.pdf")
+                generate_category_pdf(cat_name, txs, output, project, client, show_qr=not arg_no_qr, sort_week=arg_sort_week, fonts=fonts)
+                pdf_files.append(output)
+                all_categories.append((cat_name, txs))
+                for t in txs:
+                    ref = t["transactiereferentie"]
+                    if ref:
+                        new_refs.add(ref)
+
     else:
         for cat_name, cat_path in CATEGORIE_MAPPEN.items():
             if not os.path.isdir(cat_path):
@@ -1544,6 +1566,29 @@ def main():
                 ref = t["transactiereferentie"]
                 if ref:
                     new_refs.add(ref)
+
+        # Forced fallback in non-auto path
+        if not all_categories and arg_force_dec:
+            print("  [FORCED] Geen categorieën geselecteerd — verwerk alle mappen met transacties:")
+            for cat_name, cat_path in CATEGORIE_MAPPEN.items():
+                if not os.path.isdir(cat_path):
+                    continue
+                txs = collect_transactions(cat_path, week_filter)
+                txs = filter_by_month(txs, month_filter)
+                if not txs:
+                    continue
+                print(f"  + {cat_name} ({len(txs)} transacties)")
+                for t in txs:
+                    tag = "BANK" if t["is_bank"] else "CONTANT"
+                    print(f"      [{tag}] {t['merchant'][:35]:35s} {t['amount']:>8s}")
+                output = os.path.join(OUT_DIR, f"declaratie_{cat_name}_{proj}_{timestamp}.pdf")
+                generate_category_pdf(cat_name, txs, output, project, client, show_qr=not arg_no_qr, sort_week=arg_sort_week, fonts=fonts)
+                pdf_files.append(output)
+                all_categories.append((cat_name, txs))
+                for t in txs:
+                    ref = t["transactiereferentie"]
+                    if ref:
+                        new_refs.add(ref)
 
     if not all_categories:
         print("\nGeen declaraties om te verwerken.")
@@ -1604,9 +1649,12 @@ def main():
         shutil.copy2(combined_output, front_path)
         print(f"  [FRONT] {front_path}")
 
-    # State opslaan
-    all_processed_refs.update(new_refs)
-    schrijf_state(all_processed_refs, project, client)
+    # State opslaan (niet in forced modus)
+    if arg_force_dec:
+        print("  [FORCED] State niet bijgewerkt.")
+    else:
+        all_processed_refs.update(new_refs)
+        schrijf_state(all_processed_refs, project, client)
 
     print(f"\nGereed! Alles staat in: {OUT_DIR}")
     print(f"Zip bestand: {zip_path}")
