@@ -6,30 +6,6 @@ Alle wijzigingen op een **eigen branch**, pas na review naar `main`.
 
 ## Prioritijd
 
-### P1. `nb.txt` met `[Headers]` per categorie
-**Branch:** `4-nb-headers`
-
-Huidig formaat (`nb.txt`):
-```
-Omschrijving @ 25-05-2026 EUR 12.50
-```
-
-Nieuw formaat — headers voor categorieën:
-```
-[4. Overig]
-Omschrijving @ 25-05-2026 EUR 12.50
-!bonnetjes/pasfoto.jpg
-
-[1. Eten]
-Lunch @ 25-05-2026 EUR 8.50
-```
-
-- `!pad/naar/bestand.jpg` = koppel afbeelding aan transactie
-- Bestand wordt meegezipt in `bonnetjes/`
-- In PDF: klikbare link naar de entry in de ZIP-structuur
-
----
-
 ### P2. Bonnetjes — EXIF + OCR
 **Branch:** `5-bonnetjes-exif-ocr`
 
@@ -61,6 +37,17 @@ Optioneel: genereer een extra overzicht met BTW-bedragen per categorie/maand. Ha
 ---
 
 ## Done
+
+### P1. `nb.txt` met `[Headers]` per categorie
+**Branch:** `4-nb-headers`
+
+- `[<nr>. <naam>]` headers zetten categorie voor alle transacties eronder
+- `!pad/naar/bestand.jpg` koppelt afbeelding aan voorgaande transactie
+- Header-categorie heeft voorrang op map-categorie / auto-classificatie
+- Bonnetjes worden meegezipt in `bonnetjes/` in de ZIP
+- In PDF: klikbare link naar de bonnetjes-entry in ZIP-structuur
+- Backwards compatible: zonder headers werkt nb.txt als voorheen
+- `nb.txt` toegevoegd aan `.gitignore`, voorbeeld in `README.md`
 
 ### --src flag + tilde expansie + hash-based duplicate check + --force-dec
 **Commits:** `f9220c8`, `8379b72`

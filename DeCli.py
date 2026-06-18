@@ -98,8 +98,8 @@ def load_config(path):
             continue
     else:
         raise UnicodeDecodeError(f"Kan {path} niet lezen (geen UTF-8 of UTF-16)")
-    BASE = cfg["base"]
-    SRC = cfg.get("src", BASE)
+    BASE = os.path.expanduser(cfg["base"])
+    SRC = os.path.expanduser(cfg.get("src", BASE))
     REKENINGHOUDER = cfg["rekeninghouder"]
     IBAN = cfg["iban"]
     CATEGORIE_MAPPEN = {k: os.path.join(BASE, v) for k, v in cfg["categorie_mappen"].items()}
@@ -218,15 +218,34 @@ def parse_date_from_suffix(text):
 
 def parse_text_transactions(txt_path):
     transactions = []
+    current_cat = None
     with open(txt_path, "r", encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
-            if not line:
+            if not line or line.startswith("#"):
                 continue
+
+            # Category header: [<nr>. <naam>]
+            header_m = re.match(r'\[(\d+)\.\s*(.+)\]', line)
+            if header_m:
+                nr = header_m.group(1)
+                name = header_m.group(2).strip().lower().replace(" ", "-")
+                current_cat = None
+                for cat_key in CATEGORIE_MAPPEN.keys():
+                    if cat_key.startswith(nr + "-") or cat_key.endswith("-" + name) or cat_key == name:
+                        current_cat = cat_key
+                        break
+                continue
+
+            # Image attachment: !path/to/image
+            if line.startswith("!"):
+                img_path = line[1:].strip()
+                if transactions:
+                    transactions[-1].setdefault("images", []).append(img_path)
+                continue
+
             raw = line.lstrip("- ").strip()
-            # Eerst datum eruit (staat achteraan, na @)
             dt, raw = parse_date_from_suffix(raw)
-            # Dan bedrag eruit
             m = re.search(r"EUR\s*([\d]+[.,][\d]+)", raw, re.IGNORECASE)
             if not m:
                 continue
@@ -250,7 +269,10 @@ def parse_text_transactions(txt_path):
                 "omschrijving": f"Contant/Anders - {comment}" if comment else "Contant/Anders",
                 "transactiereferentie": f"nb_{os.path.basename(txt_path)}_{len(transactions)}",
                 "date_obj": dt or datetime(2026, 1, 1),
-                "is_bank": False, "source": txt_path
+                "is_bank": False,
+                "source": txt_path,
+                "category": current_cat,
+                "images": [],
             })
     return transactions
 
@@ -637,6 +659,23 @@ def dtb(page, t, y, fonts=FONTS_MODERN):
     else:
         page.insert_text((M + 15, y), "Geen banktransactie", fontsize=8, color=(0.5, 0.5, 0.5), **fi(fonts, "italic"))
     y += 10
+    # Bonnetjes / bijlagen
+    for img in t.get("images", []):
+        icon = NERD_GLYPH_FOLDER if nf else ""
+        ix = M + 15
+        if nf:
+            page.insert_text((ix, y), icon, fontsize=8, color=(0.6, 0.4, 0.0), fontfile=nerd_file)
+            ix += 14
+        arc = img.replace("\\", "/")
+        label = f"Bonnetje: {arc}"
+        page.insert_text((ix, y), label, fontsize=8, color=(0.3, 0.3, 0.8), **fi(fonts, "body"))
+        lw = gtl(label, fonts, "body", 8)
+        page.insert_link({
+            "kind": fitz.LINK_URI,
+            "from": fitz.Rect(ix, y - 8, ix + lw, y + 4),
+            "uri": arc,
+        })
+        y += 12
     page.draw_line((M + 5, y), (W - M - 5, y), color=(0.85, 0.85, 0.85))
     return y + 20
 
@@ -1056,7 +1095,7 @@ def generate_txt_table(all_categories, project, client, cli_command=""):
 
 # ----- Zip -----
 
-def create_project_zip(pdf_files, txt_files, bron_pdfs, table_text, output_zip, project, tree=None):
+def create_project_zip(pdf_files, txt_files, bron_pdfs, table_text, output_zip, project, tree=None, bonnetjes=None):
     entries = []
 
     def add_entry(path):
@@ -1080,6 +1119,14 @@ def create_project_zip(pdf_files, txt_files, bron_pdfs, table_text, output_zip, 
         table_arc = f"declaratie_table_{project}.txt"
         zf.writestr(table_arc, table_text)
         add_entry(table_arc)
+
+        # Bonnetjes bijlagen (arc_name behoudt de relatieve structuur uit nb.txt)
+        for src_path, arc_name in (bonnetjes or []):
+            if os.path.exists(src_path):
+                zf.write(src_path, arc_name)
+                add_entry(arc_name)
+            else:
+                print(f"  [!] Bonnetje niet gevonden: {src_path}")
 
         if tree is None:
             tree = build_zip_tree(entries)
@@ -1484,12 +1531,16 @@ def main():
     if arg_auto:
         organize_base()
         # Auto-classificatie: scan ALLE mappen, classificeer per transactie
+        # Header-categorie uit nb.txt heeft voorrang op auto-classificatie
         alle_txs = []
         for cat_name, cat_path in CATEGORIE_MAPPEN.items():
             if os.path.isdir(cat_path):
                 txs = collect_transactions(cat_path, arg_weken)
                 for t in txs:
-                    t["categorie"] = classificeer_transactie(t) or "4-PBMs-overig"
+                    if t.get("category"):
+                        t["categorie"] = t["category"]
+                    else:
+                        t["categorie"] = classificeer_transactie(t) or "4-PBMs-overig"
                 alle_txs.extend(txs)
 
         alle_txs = filter_by_month(alle_txs, month_filter)
@@ -1540,19 +1591,34 @@ def main():
                         new_refs.add(ref)
 
     else:
+        # Collect all transactions, determine effective category per transaction
+        alle_txs = []
         for cat_name, cat_path in CATEGORIE_MAPPEN.items():
             if not os.path.isdir(cat_path):
                 continue
             if maps_te_verwerken and cat_name not in maps_te_verwerken:
                 continue
-            print(f"=== {cat_name} ===")
             txs = collect_transactions(cat_path, week_filter)
-            txs = filter_by_month(txs, month_filter)
-            if not txs:
-                print("  Geen transacties in geselecteerde weken/maand.")
-                continue
+            for t in txs:
+                t["effective_category"] = t.get("category") or cat_name
+            alle_txs.extend(txs)
 
-            print(f"  {len(txs)} transacties")
+        alle_txs = filter_by_month(alle_txs, month_filter)
+
+        if not alle_txs:
+            print("  Geen transacties gevonden.")
+            return
+
+        # Group by effective category
+        per_cat = defaultdict(list)
+        for t in alle_txs:
+            per_cat[t["effective_category"]].append(t)
+
+        for cat_name in CATEGORIE_MAPPEN:
+            if cat_name not in per_cat:
+                continue
+            txs = per_cat[cat_name]
+            print(f"=== {cat_name} ({len(txs)} transacties) ===")
             for t in txs:
                 tag = "BANK" if t["is_bank"] else "CONTANT"
                 print(f"    [{tag}] {t['merchant'][:35]:35s} {t['amount']:>8s}")
@@ -1568,15 +1634,9 @@ def main():
                     new_refs.add(ref)
 
         # Forced fallback in non-auto path
-        if not all_categories and arg_force_dec:
-            print("  [FORCED] Geen categorieën geselecteerd — verwerk alle mappen met transacties:")
-            for cat_name, cat_path in CATEGORIE_MAPPEN.items():
-                if not os.path.isdir(cat_path):
-                    continue
-                txs = collect_transactions(cat_path, week_filter)
-                txs = filter_by_month(txs, month_filter)
-                if not txs:
-                    continue
+        if not all_categories and arg_force_dec and per_cat:
+            print("  [FORCED] Geen categorieën geselecteerd — verwerk alle beschikbare:")
+            for cat_name, txs in sorted(per_cat.items()):
                 print(f"  + {cat_name} ({len(txs)} transacties)")
                 for t in txs:
                     tag = "BANK" if t["is_bank"] else "CONTANT"
@@ -1635,13 +1695,25 @@ def main():
     generate_combined_pdf(all_categories, combined_output, project, client, show_qr=not arg_no_qr, tree_text=tree_text, script_name=os.path.basename(__file__), cli_command=cli_command, show_cmd=not arg_no_cmd, sort_week=arg_sort_week, fonts=fonts)
     pdf_files.append(combined_output)
 
-    # Zip - tree opnieuw opbouwen met combined PDF erbij
+    # Verzamel bonnetjes uit alle transacties
+    bonnetjes = []
+    for _, txs in all_categories:
+        for t in txs:
+            for img_rel in t.get("images", []):
+                src = os.path.join(os.path.dirname(t["source"]), img_rel)
+                # Normaliseer pad naar forward slashes voor ZIP
+                arc = img_rel.replace("\\", "/")
+                bonnetjes.append((src, arc))
+
+    # Zip - tree opnieuw opbouwen met combined PDF + bonnetjes erbij
     zip_tree_entries = tree_entries + [os.path.join("declaratie_pdfs", os.path.basename(combined_output))]
+    for _, arc_name in bonnetjes:
+        zip_tree_entries.append(arc_name)
     zip_tree_text = build_zip_tree(zip_tree_entries)
     EXPORT_DIR = os.path.join(BASE, "export")
     os.makedirs(EXPORT_DIR, exist_ok=True)
     zip_path = os.path.join(EXPORT_DIR, f"{yyyymmdd}-declaraties_{proj}.zip")
-    create_project_zip(pdf_files, txt_files, bron_pdfs, table, zip_path, project, zip_tree_text)
+    create_project_zip(pdf_files, txt_files, bron_pdfs, table, zip_path, project, zip_tree_text, bonnetjes=bonnetjes)
 
     # --pdf-to-front: kopieer gecombineerde PDF naar werkmap
     if arg_pdf_to_front:
