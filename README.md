@@ -3,6 +3,8 @@
 Genereert declaratie-PDF's per categorie op basis van Rabobank-transactie-PDF's
 en handmatige uitgaven via `nb.txt` bestanden.
 
+Zie ook: [`TODO.md`](TODO.md) — [`syncthing101.md`](syncthing101.md)
+
 ## Snelstart (uv)
 
 ```bash
