@@ -42,6 +42,13 @@ NERD_GLYPH_FILE = "\uf016"    # nf-fa-file_o
 NERD_GLYPH_BANK = "\uf09c"    # nf-fa-credit_card
 NERD_GLYPH_CASH = "\uf0d6"    # nf-fa-money
 NERD_GLYPH_TAG = "\uf02b"     # nf-fa-tag
+# Index van symbolen voor bonnetjes/OCR \u2014 zie nerdfont-symbols.md
+NERD_GLYPH_JSON = "\ueb0f"     # nf-cod-json \u2014 JSON-metadata
+NERD_GLYPH_LOCATION = "\uf041" # nf-fa-map_marker \u2014 GPS/locatie
+NERD_GLYPH_IMAGE = "\uf03e"    # nf-fa-image \u2014 afbeelding
+NERD_GLYPH_LINK_IMG = "\uf0c6" # nf-fa-paperclip \u2014 gekoppelde foto/bijlage
+NERD_GLYPH_RECEIPT = "\uf543"  # nf-fa-receipt \u2014 bonnetje/kassabon
+NERD_GLYPH_CHECK = "\uf00c"    # nf-fa-check \u2014 gematcht/geverifieerd
 
 TINOS_FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 
@@ -659,9 +666,9 @@ def dtb(page, t, y, fonts=FONTS_MODERN):
     else:
         page.insert_text((M + 15, y), "Geen banktransactie", fontsize=8, color=(0.5, 0.5, 0.5), **fi(fonts, "italic"))
     y += 10
-    # Bonnetjes / bijlagen
+    # Bonnetjes / bijlagen — koppeling-afbeelding symbool (zie nerdfont-symbols.md)
     for img in t.get("images", []):
-        icon = NERD_GLYPH_FOLDER if nf else ""
+        icon = NERD_GLYPH_LINK_IMG if nf else ""
         ix = M + 15
         if nf:
             page.insert_text((ix, y), icon, fontsize=8, color=(0.6, 0.4, 0.0), fontfile=nerd_file)
