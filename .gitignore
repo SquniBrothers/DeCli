@@ -8,6 +8,11 @@ declaratie_overzichten/
 # Bonnetjes / Syncthing
 bonnetjes/
 
+# Test-bonnen (foto's met persoonlijke data)
+test/
+*.jpg
+*.jpeg
+
 # Fonts (gedownload via setup.py fonts)
 fonts/
 

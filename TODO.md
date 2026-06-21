@@ -7,15 +7,16 @@ Alle wijzigingen op een **eigen branch**, pas na review naar `main`.
 ## Prioritijd
 
 ### P2. Bonnetjes — EXIF + OCR
-**Branch:** `5-bonnetjes-exif-ocr`
+**Branch:** `5-bonnetjes`
 
 | Onderdeel | Tool | Wat |
 |-----------|------|-----|
 | EXIF lezen | `Pillow` | Datum, GPS-coördinaten |
-| OCR | `pytesseract` + Tesseract | Totaalbedrag, BTW-bedrag |
-| Valuta heuristiek | Eigen regex | `totaal € XX,XX` of `btw € X,XX` |
+| OCR | `PaddleOCR` | Totaalbedrag, BTW-bedrag (zie [`paddleocr101.md`](paddleocr101.md)) |
+| Veld-extractie | regex óf Qwen via Ollama | `totaal € XX,XX` / `btw € X,XX` → JSON |
 
 Afbeelding in ZIP onder `bonnetjes/`, klikbare link in PDF.
+Handleiding voor de OCR-stap: [`paddleocr101.md`](paddleocr101.md).
 
 ---
 
