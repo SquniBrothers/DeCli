@@ -5,7 +5,7 @@ Declaratie Generator CLI
 Genereert declaratie-PDF's per categorie op basis van Rabobank-transactie-PDF's
 en handmatige (contante) uitgaven via nb.txt bestanden.
 
-Gebruik: py genereer_declaraties.py
+Gebruik: py DeCli.py
 """
 
 import fitz
@@ -33,22 +33,33 @@ OUT_DIR = ""
 REPO_URL = "https://github.com/G2LB/DeCli/"
 BIC_LOOKUP = {}  # wordt aangevuld uit config, daarna met defaults
 NERD_FONT_PATH = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Microsoft", "Windows", "Fonts", "JetBrainsMonoNerdFont-Regular.ttf")
-NERD_GLYPH_GITHUB = "\uea84"  # nf-dev-github_badge
+NERD_GLYPH_GITHUB = "\uf09b"   # nf-fa-github (U+F09B) \u2014 overschreven, zie issue #4
 NERD_GLYPH_FOLDER = "\uf07c"   # nf-fa-folder
 NERD_GLYPH_CALENDAR = "\uf073" # nf-fa-calendar
-NERD_GLYPH_EURO = "\uf155"    # nf-fa-euro
-NERD_GLYPH_MONEY = "\uf0d6"   # nf-fa-money
-NERD_GLYPH_FILE = "\uf016"    # nf-fa-file_o
-NERD_GLYPH_BANK = "\uf09c"    # nf-fa-credit_card
-NERD_GLYPH_CASH = "\uf0d6"    # nf-fa-money
-NERD_GLYPH_TAG = "\uf02b"     # nf-fa-tag
-# Index van symbolen voor bonnetjes/OCR \u2014 zie nerdfont-symbols.md
-NERD_GLYPH_JSON = "\ueb0f"     # nf-cod-json \u2014 JSON-metadata
+NERD_GLYPH_EURO = "\uf155"     # nf-fa-euro
+NERD_GLYPH_MONEY = "\uf0d6"    # nf-fa-money
+NERD_GLYPH_FILE = "\uf016"     # nf-fa-file_o
+NERD_GLYPH_BANK = "\uf09c"     # nf-fa-credit_card
+NERD_GLYPH_TAG = "\uf02b"      # nf-fa-tag
 NERD_GLYPH_LOCATION = "\uf041" # nf-fa-map_marker \u2014 GPS/locatie
-NERD_GLYPH_IMAGE = "\uf03e"    # nf-fa-image \u2014 afbeelding
 NERD_GLYPH_LINK_IMG = "\uf0c6" # nf-fa-paperclip \u2014 gekoppelde foto/bijlage
-NERD_GLYPH_RECEIPT = "\uf543"  # nf-fa-receipt \u2014 bonnetje/kassabon
 NERD_GLYPH_CHECK = "\uf00c"    # nf-fa-check \u2014 gematcht/geverifieerd
+# Definitieve bonnetjes/OCR-glyph-set \u2014 zie issue #4 en nerdfont-symbols.md
+NERD_GLYPH_OCR = "\U000f113a"      # nf-md-ocr (U+F113A)
+NERD_GLYPH_EUR = "\U000f01ad"      # nf-md-currency_eur (U+F01AD)
+NERD_GLYPH_JSON = "\U000f0626"     # nf-md-code_json (U+F0626) \u2014 JSON-metadata
+NERD_GLYPH_IMAGE = "\uf03e"        # nf-fa-image (U+F03E) \u2014 afbeelding
+NERD_GLYPH_ZIP = "\U000f07b9"      # nf-md-folder_zip_outline (U+F07B9)
+NERD_GLYPH_TERM = "\uf120"         # nf-fa-terminal (U+F120)
+NERD_GLYPH_MATCH = "\U000f0c95"    # nf-md-map_marker_check (U+F0C95)
+NERD_GLYPH_RECEIPT = "\U000f0449"  # nf-md-receipt (U+F0449) \u2014 bonnetje/kassabon
+NERD_GLYPH_CAMERA = "\U000f0100"   # nf-md-camera (U+F0100)
+NERD_GLYPH_CASH = "\U000f0116"     # nf-md-cash_multiple (U+F0116)
+# Alternatieven (fallback als de fa-variant niet rendert)
+NERD_GLYPH_GITHUB2 = "\U000f02a4"  # nf-md-github (U+F02A4)
+NERD_GLYPH_IMGMARK = "\U000f177b"  # nf-md-image_marker (U+F177B)
+NERD_GLYPH_IMGSYNC = "\U000f1a00"  # nf-md-image_sync (U+F1A00)
+NERD_GLYPH_TERM2 = "\uea85"        # nf-cod-terminal (U+EA85)
 
 TINOS_FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 
