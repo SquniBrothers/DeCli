@@ -2,6 +2,41 @@
 
 Een praktische handleiding voor het synchroniseren van bestanden tussen Windows, Linux, Android en iPhone.
 
+> **Doel binnen DeCli:** bonnetjes die je op je telefoon fotografeert automatisch naar een `receipts/inbox` op je PC of server laten verschijnen, klaar voor OCR-verwerking. Geen cloud, geen account, geen kosten.
+
+---
+
+## Snelstart (TL;DR)
+
+Voor wie meteen aan de slag wil — de vier stappen, details staan verderop:
+
+1. **Installeren** op beide apparaten (PC + telefoon) — zie [Installatie](#installatie).
+2. **Koppelen** via Device ID of QR-code — zie [Apparaten koppelen](#apparaten-koppelen).
+3. **Map delen** (`Pictures/Receipts` → `receipts/inbox`) — zie [Een map delen](#een-map-delen).
+4. **Testen** met een `test.txt` — zie [Synchronisatie testen](#synchronisatie-testen).
+
+```text
+Telefoon (foto) → Syncthing → PC/Server: receipts/inbox → OCR → DeCli
+```
+
+---
+
+## Inhoud
+
+1. [Wat is Syncthing?](#wat-is-syncthing)
+2. [Hoe werkt Syncthing?](#hoe-werkt-syncthing)
+3. [Installatie](#installatie) — [Windows](#windows) · [Linux](#linux) · [Android](#android) · [iPhone (iOS)](#iphone-ios)
+4. [Device ID vinden](#device-id-vinden)
+5. [Apparaten koppelen](#apparaten-koppelen)
+6. [Een map delen](#een-map-delen)
+7. [Synchronisatie testen](#synchronisatie-testen)
+8. [Folder Types](#folder-types)
+9. [Aanbevolen structuur voor DeCli](#aanbevolen-structuur-voor-decli)
+10. [Workflow voor automatische bonverwerking](#workflow-voor-automatische-bonverwerking)
+11. [Problemen oplossen](#problemen-oplossen)
+12. [Aanbevolen hardware](#aanbevolen-hardware)
+13. [Conclusie](#conclusie)
+
 ---
 
 # Wat is Syncthing?
