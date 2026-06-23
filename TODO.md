@@ -2,6 +2,12 @@
 
 Alle wijzigingen op een **eigen branch**, pas na review naar `main`.
 
+## Inhoud
+
+- [Prioritijd](#prioritijd)
+- [Done](#done)
+- [Workflow](#workflow)
+
 ---
 
 ## Prioritijd

@@ -6,6 +6,13 @@ transacties, bonnetjes en metadata. De glyphs worden getekend met het patroon in
 vaste icoonkolom van 14px. Vereist een Nerd Font (Tinos Nerd Font of JetBrainsMono Nerd
 Font); zonder font valt de code terug op tekst zonder icoon (`nf = os.path.exists(...)`).
 
+## Inhoud
+
+- [Bestaande symbolen](#bestaande-symbolen-declipy-r3644)
+- [Nieuwe symbolen (deze branch) — voor bonnetjes/OCR](#nieuwe-symbolen-deze-branch--voor-bonnetjesocr)
+- [Alternatieve codepoints (fallback per font-build)](#alternatieve-codepoints-fallback-per-font-build)
+- [Verificatie tegen geïnstalleerd font](#verificatie-tegen-geïnstalleerd-font)
+
 ## Bestaande symbolen (`DeCli.py` r.36–44)
 
 | Constante | Glyph | Codepoint | Nerd-naam | Gebruikt in |

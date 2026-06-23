@@ -12,6 +12,23 @@ Receipts Folder → Syncthing → inbox → PaddleOCR → OCR-tekst → Qwen (Ol
 
 ---
 
+## Inhoud
+
+1. [Wat is PaddleOCR?](#wat-is-paddleocr)
+2. [Installatie](#installatie)
+3. [Snelle test](#snelle-test)
+4. [Tekst extraheren naar platte regels](#tekst-extraheren-naar-platte-regels)
+5. [Velden herkennen (heuristiek, zonder LLM)](#velden-herkennen-heuristiek-zonder-llm)
+6. [Velden herkennen met de LLM (Qwen via Ollama)](#velden-herkennen-met-de-llm-qwen-via-ollama)
+7. [Bestandsnaam-conventie](#bestandsnaam-conventie-yymmdd-betaalmethode-etablissementext)
+8. [Omzetten naar een `nb.txt`-entry](#omzetten-naar-een-nbtxt-entry)
+9. [Volledige pijplijn (inbox-watcher)](#volledige-pijplijn-inbox-watcher)
+10. [Problemen oplossen](#problemen-oplossen)
+11. [Aanbevolen hardware](#aanbevolen-hardware)
+12. [Conclusie](#conclusie)
+
+---
+
 # Wat is PaddleOCR?
 
 PaddleOCR is een gratis, open-source OCR-engine (door Baidu/PaddlePaddle).

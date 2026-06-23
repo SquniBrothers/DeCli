@@ -5,6 +5,17 @@ en handmatige uitgaven via `nb.txt` bestanden.
 
 Zie ook: [`TODO.md`](TODO.md) — [`syncthing101.md`](syncthing101.md) — [`paddleocr101.md`](paddleocr101.md)
 
+## Inhoud
+
+- [Snelstart (uv)](#snelstart-uv)
+- [Zonder uv (pip)](#zonder-uv-pip)
+- [Configuratie](#configuratie)
+- [Mapstructuur](#mapstructuur)
+- [Features](#features)
+- [Alle CLI opties](#alle-cli-opties)
+- [Voorbeelden](#voorbeelden)
+- [Licentie](#licentie)
+
 ## Snelstart (uv)
 
 ```bash
